@@ -1,0 +1,4 @@
+github.com/r10r/crc16 v0.1.1 h1:BsuCL6d+j0hBCQ/nNnwHmlTF0shVES2IagUgh1MS6yU=
+github.com/r10r/crc16 v0.1.1/go.mod h1:I17p13f8bQGzqw5+futttVdERhbvzpgjlPZdwIJ0ka8=
+github.com/snksoft/crc v1.1.0 h1:HkLdI4taFlgGGG1KvsWMpz78PkOC9TkPVpTV/cuWn48=
+github.com/snksoft/crc v1.1.0/go.mod h1:5/gUOsgAm7OmIhb6WJzw7w5g2zfJi4FrHYgGPdshE+A=
