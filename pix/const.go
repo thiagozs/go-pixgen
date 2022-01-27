@@ -2,7 +2,6 @@ package pix
 
 const (
 	//EmvSchema
-	//TAG_ONETIME              = "1"
 	TAG_INIT                 = "00"
 	TAG_MAI                  = "26"
 	TAG_MCC                  = "52"

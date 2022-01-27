@@ -13,7 +13,8 @@ func main() {
 		pix.OptDescription("Teste"),
 		pix.OptMerchantName("Thiago Zilli Sarmento"),
 		pix.OptMerchantCity("Ararangua"),
-		pix.OptAmount("0.00"),
+		pix.OptAmount("1.00"),
+		pix.OptAditionalInfo("gerado por go-pixgen"),
 		pix.OptKind(pix.STATIC),
 	}
 
@@ -21,10 +22,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	if err := p.Validates(); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	cpy := p.GenPayload()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(cpy)
+	fmt.Printf("Copy and Paste: %s\n", cpy)
+
+	bts, err := p.GenQRCode()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("QRCode: %b\n", bts)
 
 }

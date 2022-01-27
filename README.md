@@ -4,28 +4,42 @@
 
 Generate ~~and validate~~ payments of Brazil Instant Payment System (Pix), making fast and simple to handle charges and proccess then in your project.
 
-**UNDER DEVELOPMENT** *** Not ready for production
+**UNDER DEVELOPMENT** *** Becareful ***
 
 Example implementation.
 ```golang
 opts := []pix.Options{
-    pix.OptPixKey("11955555555"),
-    pix.OptDescription("Teste"),
-    pix.OptMerchantName("Thiago Zilli Sarmento"),
-    pix.OptMerchantCity("Ararangua"),
-    pix.OptAmount("0.00"),
-    pix.OptKind(pix.STATIC),
-}
+		pix.OptPixKey("11955555555"),
+		pix.OptDescription("Teste"),
+		pix.OptMerchantName("Thiago Zilli Sarmento"),
+		pix.OptMerchantCity("Ararangua"),
+		pix.OptAmount("1.00"),
+		pix.OptAditionalInfo("gerado por go-pixgen"),
+		pix.OptKind(pix.STATIC),
+	}
 
-p, err := pix.New(opts...)
-if err != nil {
-    panic(err)
-}
-cpy := p.GenPayload()
-if err != nil {
-    panic(err)
-}
-fmt.Println(cpy)
+	p, err := pix.New(opts...)
+	if err != nil {
+		fmt.Println(err.Error())
+    return
+	}
+
+	if err := p.Validates(); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	cpy := p.GenPayload()
+
+	fmt.Printf("Copy and Paste: %s\n", cpy)
+
+	bts, err := p.GenQRCode()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	fmt.Printf("QRCode: %b\n", bts)
 ```
 
 ## Roadmap
@@ -34,7 +48,7 @@ fmt.Println(cpy)
   - [x] Static
   - [x] Dynamic
 - [ ] Parse and validate EMV Codes
-- [ ] Export generated/parsed payment to Image
+- [x] Export generated/parsed payment to Image
 - [x] Export generated/parsed payment to EMV Code
 - [ ] Fetch, parse and validate remote payloads from dynamic payments
   - [ ] Verify if has already expired

@@ -14,17 +14,42 @@ func (pix PixKind) String() string {
 type Options func(o *OptionsParams) error
 
 type OptionsParams struct {
-	id          string
-	pixKey      string
-	description string
-	amount      string
-	merchant    merchant
-	kind        PixKind
+	id            string
+	pixKey        string
+	description   string
+	amount        string
+	aditionalInfo string
+	merchant      merchant
+	kind          PixKind
+	url           string
+	qrcodeContent string
+	qrcodeSize    int
 }
 
 type merchant struct {
 	name string
 	city string
+}
+
+func OptQRCodeSize(value int) Options {
+	return func(o *OptionsParams) error {
+		o.qrcodeSize = value
+		return nil
+	}
+}
+
+func OptUrl(value string) Options {
+	return func(o *OptionsParams) error {
+		o.url = value
+		return nil
+	}
+}
+
+func OptAditionalInfo(value string) Options {
+	return func(o *OptionsParams) error {
+		o.aditionalInfo = value
+		return nil
+	}
 }
 
 func OptKind(kind PixKind) Options {
@@ -104,4 +129,26 @@ func (o *OptionsParams) GetAmount() string {
 
 func (o *OptionsParams) GetKind() PixKind {
 	return o.kind
+}
+
+func (o *OptionsParams) GetAditionalInfo() string {
+	return o.aditionalInfo
+}
+
+func (o *OptionsParams) GetUrl() string {
+	return o.url
+}
+
+func (o *OptionsParams) GetQRCodeSize() int {
+	return o.qrcodeSize
+}
+
+func (o *OptionsParams) GetQRCodeContent() string {
+	return o.qrcodeContent
+}
+
+// ------------- setters
+
+func (o *OptionsParams) SetQRCodeContent(value string) {
+	o.qrcodeContent = value
 }

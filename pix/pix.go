@@ -1,11 +1,14 @@
 package pix
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/snksoft/crc"
+	"github.com/thiagozs/go-pixgen/qrcode"
 )
 
 type Pix struct {
@@ -64,6 +67,8 @@ func (p *Pix) GenPayload() string {
 
 	payload = p.FindAndReplaceCRC(payload)
 
+	p.params.SetQRCodeContent(payload)
+
 	return payload
 }
 
@@ -77,15 +82,15 @@ func (p *Pix) generateMAI() string {
 		tags := []string{
 			p.getValue(TAG_MAI_GUI, BC_GUI),
 			p.getValue(TAG_MAI_PIXKEY, p.params.pixKey),
-			p.getValue(TAG_MAI_INFO_ADD, "Gerado por Pix-Utils"),
-			//p.getValue(TAG_MAI_INFO_ADD, p.params.infoAdicional),
+		}
+		if len(p.params.aditionalInfo) > 0 {
+			tags = append(tags, p.getValue(TAG_MAI_INFO_ADD, p.params.aditionalInfo))
 		}
 		return strings.Join(tags, "")
 	case DYNAMIC:
 		tags := []string{
 			p.getValue(TAG_MAI_GUI, BC_GUI),
-			p.getValue(TAG_MAI_URL, "https://www.pix.com.br/"),
-			//p.getValue(TAG_MAI_URL, p.params.url),
+			p.getValue(TAG_MAI_URL, p.params.url),
 		}
 		return strings.Join(tags, "")
 	default:
@@ -110,4 +115,35 @@ func (p *Pix) FindAndReplaceCRC(payload string) string {
 	m := regexp.MustCompile(`\w{4}$`)
 	payload = m.ReplaceAllString(payload, "")
 	return payload + p.getCRC16(payload)
+}
+
+func (p *Pix) Validates() error {
+	if p.params.pixKey == "" {
+		return errors.New("pixkey must not be empty")
+	}
+
+	if p.params.merchant.name == "" {
+		return errors.New("name must not be empty")
+	}
+
+	if p.params.merchant.city == "" {
+		return errors.New("city must not be empty")
+	}
+
+	if utf8.RuneCountInString(p.params.merchant.name) > 25 {
+		return errors.New("name must be at least 25 characters long")
+	}
+
+	if utf8.RuneCountInString(p.params.merchant.city) > 15 {
+		return errors.New("city must be at least 15 characters long")
+	}
+
+	return nil
+}
+
+func (p *Pix) GenQRCode() ([]byte, error) {
+	return qrcode.New(qrcode.QRCodeOptions{
+		Size:    p.params.GetQRCodeSize(),
+		Content: p.params.GetQRCodeContent(),
+	})
 }
