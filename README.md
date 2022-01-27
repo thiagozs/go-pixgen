@@ -2,31 +2,45 @@
 
 <p align="center"><img alt="pix-utils" src="https://raw.githubusercontent.com/thiagozs/go-pixgen/main/assets/logo-pix.png" width="128px" /></p>
 
-generate and validate payments of Brazil Instant Payment System (Pix), making fast and simple to handle charges and proccess then in your project.
+Generate ~~and validate~~ payments of Brazil Instant Payment System (Pix), making fast and simple to handle charges and proccess then in your project.
 
 **UNDER DEVELOPMENT** *** Not ready for production
 
 Example implementation.
 ```golang
-	opts := []pix.Options{
-		pix.OptPixKey("11955555555"),
-		pix.OptDescription("Teste"),
-		pix.OptMerchantName("Thiago Zilli Sarmento"),
-		pix.OptMerchantCity("Ararangua"),
-		pix.OptAmount("0.00"),
-		pix.OptKind(pix.STATIC),
-	}
+opts := []pix.Options{
+    pix.OptPixKey("11955555555"),
+    pix.OptDescription("Teste"),
+    pix.OptMerchantName("Thiago Zilli Sarmento"),
+    pix.OptMerchantCity("Ararangua"),
+    pix.OptAmount("0.00"),
+    pix.OptKind(pix.STATIC),
+}
 
-	p, err := pix.New(opts...)
-	if err != nil {
-		panic(err)
-	}
-	cpy := p.GenPayload()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(cpy)
+p, err := pix.New(opts...)
+if err != nil {
+    panic(err)
+}
+cpy := p.GenPayload()
+if err != nil {
+    panic(err)
+}
+fmt.Println(cpy)
 ```
+
+## Roadmap
+
+- [x] Generate payments based on parameters
+  - [x] Static
+  - [x] Dynamic
+- [ ] Parse and validate EMV Codes
+- [ ] Export generated/parsed payment to Image
+- [x] Export generated/parsed payment to EMV Code
+- [ ] Fetch, parse and validate remote payloads from dynamic payments
+  - [ ] Verify if has already expired
+- [ ] Improve tests
+- [ ] Doccumentation with all methods, parameters and some examples
+- [ ] Add dynamic payment tests
 
 ## Contributing
 
