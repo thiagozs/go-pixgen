@@ -8,12 +8,9 @@ import (
 
 func main() {
 	opts := []pix.Options{
-		pix.OptPixKey("28707746806"),
-		pix.OptDescription("Teste"),
+		pix.OptPixKey("11999821234"),
 		pix.OptMerchantName("Thiago Zilli Sarmento"),
 		pix.OptMerchantCity("Ararangua"),
-		pix.OptAmount("1.00"),
-		pix.OptAditionalInfo("gerado por go-pixgen"),
 		pix.OptKind(pix.STATIC),
 	}
 

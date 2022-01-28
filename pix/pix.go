@@ -41,14 +41,16 @@ func (p *Pix) GenPayload() string {
 			p.getValue(TAG_INIT_METHOD, "11"),
 			p.getValue(TAG_MAI, p.generateMAI()),
 			p.getValue(TAG_MCC, "0000"),
-			p.getValue(TAG_TRANSACTION_CURRENCY, "986"),
-			p.getValue(TAG_TRANSACTION_AMOUNT, p.params.amount),
-			p.getValue(TAG_COUNTRY_CODE, "BR"),
+			p.getValue(TAG_TRANSACTION_CURRENCY, "986")}
+		if len(p.params.amount) > 0 {
+			tags = append(tags, p.getValue(TAG_TRANSACTION_AMOUNT, p.params.amount))
+		}
+		tags = append(tags, p.getValue(TAG_COUNTRY_CODE, "BR"),
 			p.getValue(TAG_MERCHANT_NAME, p.params.merchant.name),
 			p.getValue(TAG_MERCHANT_CITY, p.params.merchant.city),
 			p.getValue(TAG_ADDITIONAL_DATA, p.generateAdditionalData()),
 			p.getValue(TAG_CRC, "0000"),
-		}
+		)
 	case DYNAMIC:
 		tags = []string{
 			p.getValue(TAG_INIT, "01"),
@@ -56,13 +58,16 @@ func (p *Pix) GenPayload() string {
 			p.getValue(TAG_MAI, p.generateMAI()),
 			p.getValue(TAG_MCC, "0000"),
 			p.getValue(TAG_TRANSACTION_CURRENCY, "986"),
-			p.getValue(TAG_TRANSACTION_AMOUNT, p.params.amount),
-			p.getValue(TAG_COUNTRY_CODE, "BR"),
+		}
+		if len(p.params.amount) > 0 {
+			tags = append(tags, p.getValue(TAG_TRANSACTION_AMOUNT, p.params.amount))
+		}
+		tags = append(tags, p.getValue(TAG_COUNTRY_CODE, "BR"),
 			p.getValue(TAG_MERCHANT_NAME, p.params.merchant.name),
 			p.getValue(TAG_MERCHANT_CITY, p.params.merchant.city),
 			p.getValue(TAG_ADDITIONAL_DATA, p.generateAdditionalData()),
 			p.getValue(TAG_CRC, "0000"),
-		}
+		)
 	}
 
 	payload := strings.Join(tags, "")
