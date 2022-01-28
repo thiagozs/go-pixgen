@@ -3,7 +3,7 @@ package pix
 const (
 	//EmvSchema
 	TAG_INIT                 = "00"
-	TAG_INIT_METHOD          = "02"
+	TAG_INIT_METHOD          = "01"
 	TAG_MAI                  = "26"
 	TAG_MCC                  = "52"
 	TAG_TRANSACTION_CURRENCY = "53"
