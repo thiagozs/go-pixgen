@@ -38,6 +38,7 @@ func (p *Pix) GenPayload() string {
 	case STATIC:
 		tags = []string{
 			p.getValue(TAG_INIT, "01"),
+			p.getValue(TAG_INIT_METHOD, "11"),
 			p.getValue(TAG_MAI, p.generateMAI()),
 			p.getValue(TAG_MCC, "0000"),
 			p.getValue(TAG_TRANSACTION_CURRENCY, "986"),
@@ -51,6 +52,7 @@ func (p *Pix) GenPayload() string {
 	case DYNAMIC:
 		tags = []string{
 			p.getValue(TAG_INIT, "01"),
+			p.getValue(TAG_INIT_METHOD, "11"),
 			p.getValue(TAG_MAI, p.generateMAI()),
 			p.getValue(TAG_MCC, "0000"),
 			p.getValue(TAG_TRANSACTION_CURRENCY, "986"),

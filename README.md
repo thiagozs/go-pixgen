@@ -4,7 +4,7 @@
 
 Generate ~~and validate~~ payments of Brazil Instant Payment System (Pix), making fast and simple to handle charges and proccess then in your project.
 
-**UNDER DEVELOPMENT** *** Becareful ***
+**UNDER DEVELOPMENT - Becareful**
 
 Example implementation.
 ```golang
