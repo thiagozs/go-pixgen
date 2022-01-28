@@ -14,7 +14,7 @@ func (pix PixKind) String() string {
 type Options func(o *OptionsParams) error
 
 type OptionsParams struct {
-	id            string
+	txId          string
 	pixKey        string
 	description   string
 	amount        string
@@ -59,9 +59,9 @@ func OptKind(kind PixKind) Options {
 	}
 }
 
-func OptId(id string) Options {
+func OptTxId(id string) Options {
 	return func(o *OptionsParams) error {
-		o.id = id
+		o.txId = id
 		return nil
 	}
 }
@@ -103,8 +103,8 @@ func OptAmount(amount string) Options {
 
 // ------------- getters
 
-func (o *OptionsParams) GetId() string {
-	return o.id
+func (o *OptionsParams) GetTxId() string {
+	return o.txId
 }
 
 func (o *OptionsParams) GetPixKey() string {

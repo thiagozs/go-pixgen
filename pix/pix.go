@@ -102,8 +102,8 @@ func (p *Pix) generateMAI() string {
 
 func (p *Pix) generateAdditionalData() string {
 	txid := "***"
-	if len(p.params.id) > 0 {
-		txid = p.params.id
+	if len(p.params.txId) > 0 {
+		txid = p.params.txId
 	}
 	return p.getValue(TAG_TXID, txid)
 }
