@@ -21,7 +21,7 @@ opts := []pix.Options{
 	p, err := pix.New(opts...)
 	if err != nil {
 		fmt.Println(err.Error())
-    return
+                return
 	}
 
 	if err := p.Validates(); err != nil {
