@@ -12,6 +12,9 @@ func main() {
 		pix.OptMerchantName("Thiago Zilli Sarmento"),
 		pix.OptMerchantCity("Ararangua"),
 		pix.OptKind(pix.STATIC),
+		pix.OptAmount("100.00"),
+		pix.OptDescription("Test Description"),
+		pix.OptUrl("https://example.com"),
 	}
 
 	p, err := pix.New(opts...)
@@ -29,11 +32,11 @@ func main() {
 
 	fmt.Printf("Copy and Paste: %s\n", cpy)
 
-	// bts, err := p.GenQRCode()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return
-	// }
+	bts, err := p.GenQRCode()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
-	// fmt.Printf("QRCode: %b\n", bts)
+	fmt.Printf("QRCode: %b\n", bts)
 }

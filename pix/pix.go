@@ -149,6 +149,9 @@ func (p *Pix) Validates() error {
 }
 
 func (p *Pix) GenQRCode() ([]byte, error) {
+	if p.params.GetQRCodeContent() == "" {
+		_ = p.GenPayload()
+	}
 	return qrcode.New(qrcode.QRCodeOptions{
 		Size:    p.params.GetQRCodeSize(),
 		Content: p.params.GetQRCodeContent(),

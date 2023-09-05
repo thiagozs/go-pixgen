@@ -19,14 +19,14 @@ type OptionsParams struct {
 	description   string
 	amount        string
 	aditionalInfo string
-	merchant      merchant
+	merchant      Merchant
 	kind          PixKind
 	url           string
 	qrcodeContent string
 	qrcodeSize    int
 }
 
-type merchant struct {
+type Merchant struct {
 	name string
 	city string
 }
