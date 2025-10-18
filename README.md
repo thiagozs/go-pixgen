@@ -2,29 +2,29 @@
 
 <p align="center"><img alt="pix-utils" src="https://raw.githubusercontent.com/thiagozs/go-pixgen/main/assets/logo-pix.png" width="128px" /></p>
 
-Generate and validate payments of Brazil Instant Payment System (Pix), making fast and simple to handle charges and proccess then in your project. Além da lib, o repositório oferece CLI e serviço REST para gerar payloads Pix estáticos ou dinâmicos, incluindo QR Code.
+Gere e valide pagamentos do Sistema de Pagamentos Instantâneo (Pix) do Banco Central de forma simples. Além da biblioteca, este repositório inclui um CLI e um serviço REST para gerar payloads Pix estáticos ou dinâmicos, bem como seus códigos QR.
 
-## Features
+## Funcionalidades
 
-- Static (copy & paste) and dynamic (URL-based) Pix payload generation.
-- CLI `pixgen` (comandos `generate` e `serve`) para uso local ou como serviço.
-- REST service (`POST /pix`) retornando payload + QR Code (base64) e `GET /healthz`.
-- QR Code byte encoding built-in via `github.com/skip2/go-qrcode`.
-- EMV parsing helpers to inspect payload tags and metadata.
-- Field normalization (Pix keys, amount, TXID) with BACEN-aligned validation.
-- Dynamic Pix resolver with JSON/plain-text support, expiration awareness and mock friendly interface.
+- Geração de payloads Pix estáticos (copia e cola) e dinâmicos (com URL).
+- CLI `pixgen` com comandos `generate` e `serve` para uso local ou como serviço.
+- Serviço REST com `POST /pix` retornando payload + QR Code (base64) e `GET /healthz`.
+- Geração de QR Code via `github.com/skip2/go-qrcode`.
+- Utilitários de parsing EMV para inspeção de tags e metadados.
+- Normalização de dados (chave Pix, valor, TxID) seguindo regras do BACEN.
+- Resolução de Pix dinâmico suportando JSON, texto puro e tratamento de expiração.
 
-## Installation
+## Instalação
 
 ```bash
 go get github.com/thiagozs/go-pixgen
 ```
 
-Go 1.17 or newer is required.
+Requer Go 1.17 ou superior.
 
-## Quick Start
+## Guia rápido
 
-### CLI – gerar payload no stdout
+### CLI – gerar payload no terminal
 
 ```bash
 make cli
@@ -39,9 +39,9 @@ bin/pixgen generate \
   --txid PEDIDO-123
 ```
 
-Saída inclui o código copia-e-cola, campos relevantes e o QR Code em base64.
+A saída inclui o código copia-e-cola, campos relevantes e o QR Code em base64.
 
-### REST service
+### Serviço REST
 
 ```bash
 make run ARGS="serve --addr :8080"
@@ -68,9 +68,9 @@ curl -X POST http://localhost:8080/pix \
 }
 ```
 
-Endpoint `GET /healthz` retorna `200 OK` para checagens.
+O endpoint `GET /healthz` retorna `200 OK` para checagens.
 
-Exemplo rápido com `curl` + `jq` para visualizar a resposta formatada:
+Exemplo com `curl` + `jq` para visualizar a resposta:
 
 ```bash
 curl -sS -X POST http://localhost:8080/pix \
@@ -85,9 +85,9 @@ curl -sS -X POST http://localhost:8080/pix \
   }' | jq
 ```
 
-## Usage
+## Uso em código
 
-### Generate a Pix payload programaticamente
+### Gerar payload Pix programaticamente
 
 ```golang
 opts := []pix.Options{
@@ -154,35 +154,35 @@ if err != nil {
 fmt.Printf("Remote Pix expires at: %v\n", payload.ExpiresAt)
 ```
 
-## API Highlights
+## Destaques da API
 
-- `pix.New(opts...) (*pix.Pix, error)` - build a Pix generator using functional options.
-- `(*Pix).GenPayload()` - returns the EMV string and caches it for `GenQRCode()`.
-- `pix.ParsePayload(string) (*ParsedPayload, error)` - converts an EMV payload back into structured fields and validates the CRC.
-- `(*Pix).FetchDynamicPayload(ctx, client)` - downloads a dynamic Pix payload, parses it and checks expiration. Works with `http.Client` stubs for tests.
-- `(*Pix).Validates()` - called automatically by `pix.New`, and can be invoked manually to re-check mutated parameters.
+- `pix.New(opts...) (*pix.Pix, error)` – cria um gerador Pix configurável.
+- `(*Pix).GenPayload()` – retorna o payload EMV e o mantém em cache para `GenQRCode()`.
+- `pix.ParsePayload(string) (*ParsedPayload, error)` – faz o parsing do payload e valida o CRC.
+- `(*Pix).FetchDynamicPayload(ctx, client)` – baixa, valida e parseia payloads dinâmicos remotos.
+- `(*Pix).Validates()` – valida os parâmetros (chaves, tamanho de campos, etc.).
 
-### Supported Pix key formats
+### Formatos aceitos de chave Pix
 
-- Random EVP UUID (case-normalized to lowercase).
-- Phone (`+55DDDUSER`), accepting raw digits with optional `+55` prefix.
-- CPF/CNPJ (digits only, validated with check digits).
-- Email addresses (validated using `net/mail`).
+- EVP (UUID) – normalizado para minúsculo.
+- Telefone (`+55DDDNÚMERO`) – aceita apenas dígitos com ou sem `+55`.
+- CPF/CNPJ – somente dígitos, com validação dos dígitos verificadores.
+- E-mail – validado via `net/mail`.
 
-### Amount & TxID
+### Valor e TxID
 
-- Amount accepts up to 13 digits before the separator and up to 2 decimals (`9999999999999.99` cap).
-- TxID allows uppercase/lowercase letters, digits, `.` and `-` up to 35 characters. Value is uppercased when stored.
+- Valor suporta até 13 dígitos antes da vírgula e 2 casas decimais (`9999999999999.99` limite).
+- TxID permite letras, números, `.` e `-` até 35 caracteres e é armazenado em maiúsculas.
 
-### Dynamic payload fetching
+### Busca de payload dinâmico
 
-`FetchDynamicPayload` understands responses as:
+`FetchDynamicPayload` entende:
 
-- Raw EMV payload (any `text/*` content type).
-- JSON containing fields `pixCopyPaste`, `pix`, `payload`, `pixCopiaECola`, etc.
-- Optional expiration keys such as `expiresAt`, `expiration`, `expiry`. Parsed values support RFC3339 and similar layouts.
+- payload EMV bruto (`text/*`).
+- JSON com campos como `pixCopyPaste`, `pix`, `payload`, `pixCopiaECola` etc.
+- Campos de expiração (`expiresAt`, `expiration`, `expiry`) em formatos RFC3339.
 
-Local testing (HTTP URLs) is accepted when targeting `localhost` or `127.*`. Production URLs must be HTTPS.
+Para testes locais, URLs HTTP são aceitas quando o host é `localhost` ou `127.*`; para produção exige HTTPS.
 
 ## Build & Docker
 
@@ -193,26 +193,26 @@ Local testing (HTTP URLs) is accepted when targeting `localhost` or `127.*`. Pro
 
 ## Roadmap
 
-- [x] Generate payments based on parameters
-  - [x] Static
-  - [x] Dynamic
-- [x] Parse and validate EMV Codes
-- [x] Export generated/parsed payment to Image
-- [x] Export generated/parsed payment to EMV Code
-- [x] Fetch, parse and validate remote payloads from dynamic payments
-  - [x] Verify if has already expired
-- [x] Improve tests
-- [ ] Documentation with all methods, parameters and more examples
-- [x] Add dynamic payment tests
-- [x] CLI tooling for payload inspection
-- [ ] REST API hardening & auth helpers
+- [x] Gerar pagamentos a partir de parâmetros
+  - [x] Estático
+  - [x] Dinâmico
+- [x] Parse e validação de códigos EMV
+- [x] Exportar pagamento para imagem
+- [x] Exportar pagamento para código EMV
+- [x] Buscar, parsear e validar payloads dinâmicos remotos
+  - [x] Verificar se já expirou
+- [x] Melhorar testes
+- [ ] Documentação completa (métodos, parâmetros, exemplos)
+- [x] Testes para pagamentos dinâmicos
+- [x] Ferramentas CLI para inspeção de payload
+- [ ] Endurecimento da API REST e opções de autenticação
 
-## Contributing
+## Contribuindo
 
-Please contribute using [GitHub Flow](https://guides.github.com/introduction/flow). Create a branch, add commits, and [open a pull request](https://github.com/thiagozs/go-genpix/compare).
+Siga o [GitHub Flow](https://guides.github.com/introduction/flow): crie uma branch, faça commits e abra um [pull request](https://github.com/thiagozs/go-genpix/compare).
 
-## Versioning and license
+## Versionamento e licença
 
-Our version numbers follow the [semantic versioning specification](http://semver.org/). You can see the available versions by checking the [tags on this repository](https://github.com/thiagozs/go-pixgen/tags). For more details about our license model, please take a look at the [LICENSE](LICENSE) file.
+Utilizamos [SemVer](http://semver.org/). Confira as versões em [tags](https://github.com/thiagozs/go-pixgen/tags). Licença em [LICENSE](LICENSE).
 
 **2022**, Thiago Zilli Sarmento :heart:
