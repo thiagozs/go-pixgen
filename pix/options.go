@@ -1,5 +1,6 @@
 package pix
 
+// PixKind defines if the QR Code is static or dynamic.
 type PixKind int
 
 const (
@@ -7,18 +8,31 @@ const (
 	DYNAMIC
 )
 
-func (pix PixKind) String() string {
-	return [...]string{"STATIC", "DYNAMIC"}[pix]
+func (k PixKind) String() string {
+	switch k {
+	case STATIC:
+		return "STATIC"
+	case DYNAMIC:
+		return "DYNAMIC"
+	default:
+		return "UNKNOWN"
+	}
 }
 
+// Options pattern for configuring Pix parameters.
 type Options func(o *OptionsParams) error
+
+type Merchant struct {
+	name string
+	city string
+}
 
 type OptionsParams struct {
 	txId          string
 	pixKey        string
 	description   string
 	amount        string
-	aditionalInfo string
+	additional    string
 	merchant      Merchant
 	kind          PixKind
 	url           string
@@ -26,129 +40,38 @@ type OptionsParams struct {
 	qrcodeSize    int
 }
 
-type Merchant struct {
-	name string
-	city string
+// Functional options (setters)
+func OptQRCodeSize(v int) Options {
+	return func(o *OptionsParams) error { o.qrcodeSize = v; return nil }
 }
-
-func OptQRCodeSize(value int) Options {
-	return func(o *OptionsParams) error {
-		o.qrcodeSize = value
-		return nil
-	}
+func OptUrl(v string) Options { return func(o *OptionsParams) error { o.url = v; return nil } }
+func OptAdditionalInfo(v string) Options {
+	return func(o *OptionsParams) error { o.additional = v; return nil }
 }
-
-func OptUrl(value string) Options {
-	return func(o *OptionsParams) error {
-		o.url = value
-		return nil
-	}
+func OptKind(k PixKind) Options  { return func(o *OptionsParams) error { o.kind = k; return nil } }
+func OptTxId(v string) Options   { return func(o *OptionsParams) error { o.txId = v; return nil } }
+func OptPixKey(v string) Options { return func(o *OptionsParams) error { o.pixKey = v; return nil } }
+func OptDescription(v string) Options {
+	return func(o *OptionsParams) error { o.description = v; return nil }
 }
-
-func OptAditionalInfo(value string) Options {
-	return func(o *OptionsParams) error {
-		o.aditionalInfo = value
-		return nil
-	}
+func OptMerchantName(v string) Options {
+	return func(o *OptionsParams) error { o.merchant.name = v; return nil }
 }
-
-func OptKind(kind PixKind) Options {
-	return func(o *OptionsParams) error {
-		o.kind = kind
-		return nil
-	}
+func OptMerchantCity(v string) Options {
+	return func(o *OptionsParams) error { o.merchant.city = v; return nil }
 }
+func OptAmount(v string) Options                   { return func(o *OptionsParams) error { o.amount = v; return nil } }
+func (o *OptionsParams) SetQRCodeContent(v string) { o.qrcodeContent = v }
 
-func OptTxId(id string) Options {
-	return func(o *OptionsParams) error {
-		o.txId = id
-		return nil
-	}
-}
-
-func OptPixKey(pixkey string) Options {
-	return func(o *OptionsParams) error {
-		o.pixKey = pixkey
-		return nil
-	}
-}
-
-func OptDescription(desc string) Options {
-	return func(o *OptionsParams) error {
-		o.description = desc
-		return nil
-	}
-}
-
-func OptMerchantName(name string) Options {
-	return func(o *OptionsParams) error {
-		o.merchant.name = name
-		return nil
-	}
-}
-
-func OptMerchantCity(city string) Options {
-	return func(o *OptionsParams) error {
-		o.merchant.city = city
-		return nil
-	}
-}
-
-func OptAmount(amount string) Options {
-	return func(o *OptionsParams) error {
-		o.amount = amount
-		return nil
-	}
-}
-
-// ------------- getters
-
-func (o *OptionsParams) GetTxId() string {
-	return o.txId
-}
-
-func (o *OptionsParams) GetPixKey() string {
-	return o.pixKey
-}
-
-func (o *OptionsParams) GetDescription() string {
-	return o.description
-}
-
-func (o *OptionsParams) GetMerchantName() string {
-	return o.merchant.name
-}
-
-func (o *OptionsParams) GetMerchantCity() string {
-	return o.merchant.city
-}
-
-func (o *OptionsParams) GetAmount() string {
-	return o.amount
-}
-
-func (o *OptionsParams) GetKind() PixKind {
-	return o.kind
-}
-
-func (o *OptionsParams) GetAditionalInfo() string {
-	return o.aditionalInfo
-}
-
-func (o *OptionsParams) GetUrl() string {
-	return o.url
-}
-
-func (o *OptionsParams) GetQRCodeSize() int {
-	return o.qrcodeSize
-}
-
-func (o *OptionsParams) GetQRCodeContent() string {
-	return o.qrcodeContent
-}
-
-// ------------- setters
-
-func (o *OptionsParams) SetQRCodeContent(value string) {
-	o.qrcodeContent = value
-}
+// Getters
+func (o *OptionsParams) GetTxId() string           { return o.txId }
+func (o *OptionsParams) GetPixKey() string         { return o.pixKey }
+func (o *OptionsParams) GetDescription() string    { return o.description }
+func (o *OptionsParams) GetMerchantName() string   { return o.merchant.name }
+func (o *OptionsParams) GetMerchantCity() string   { return o.merchant.city }
+func (o *OptionsParams) GetAmount() string         { return o.amount }
+func (o *OptionsParams) GetKind() PixKind          { return o.kind }
+func (o *OptionsParams) GetAdditionalInfo() string { return o.additional }
+func (o *OptionsParams) GetUrl() string            { return o.url }
+func (o *OptionsParams) GetQRCodeSize() int        { return o.qrcodeSize }
+func (o *OptionsParams) GetQRCodeContent() string  { return o.qrcodeContent }

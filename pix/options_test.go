@@ -30,7 +30,7 @@ func TestOptions(t *testing.T) {
 	}{
 		{OptQRCodeSize(256), func() interface{} { return params.GetQRCodeSize() }, 256},
 		{OptUrl("https://example.com"), func() interface{} { return params.GetUrl() }, "https://example.com"},
-		{OptAditionalInfo("Additional Info"), func() interface{} { return params.GetAditionalInfo() }, "Additional Info"},
+		{OptAdditionalInfo("Additional Info"), func() interface{} { return params.GetAdditionalInfo() }, "Additional Info"},
 		{OptKind(DYNAMIC), func() interface{} { return params.GetKind() }, DYNAMIC},
 		{OptTxId("Transaction123"), func() interface{} { return params.GetTxId() }, "Transaction123"},
 		{OptPixKey("123456"), func() interface{} { return params.GetPixKey() }, "123456"},
