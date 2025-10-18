@@ -20,7 +20,11 @@ func New(opts ...Options) (*Pix, error) {
 			return nil, err
 		}
 	}
-	return &Pix{params: p}, nil
+	px := &Pix{params: p}
+	if err := px.Validates(); err != nil {
+		return nil, err
+	}
+	return px, nil
 }
 
 // GenPayload builds the EMV-compliant Pix payload string
@@ -79,6 +83,8 @@ func (p *Pix) generateMAI() string {
 		}
 		if add := p.params.GetAdditionalInfo(); add != "" {
 			parts = append(parts, p.tlv(TAG_MAI_INFO_ADD, add))
+		} else if desc := p.params.GetDescription(); desc != "" {
+			parts = append(parts, p.tlv(TAG_MAI_INFO_ADD, desc))
 		}
 		return strings.Join(parts, "")
 	case DYNAMIC:
