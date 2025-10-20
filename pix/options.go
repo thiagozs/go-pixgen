@@ -38,6 +38,11 @@ type OptionsParams struct {
 	url           string
 	qrcodeContent string
 	qrcodeSize    int
+	qrcodeScale   int
+	asciiBlack    string
+	asciiWhite    string
+	asciiQuiet    bool
+	asciiQuietSet bool
 }
 
 // Functional options (setters)
@@ -62,6 +67,26 @@ func OptMerchantCity(v string) Options {
 }
 func OptAmount(v string) Options                   { return func(o *OptionsParams) error { o.amount = v; return nil } }
 func (o *OptionsParams) SetQRCodeContent(v string) { o.qrcodeContent = v }
+func OptQRCodeScale(v int) Options {
+	return func(o *OptionsParams) error {
+		o.qrcodeScale = v
+		return nil
+	}
+}
+func OptASCIICharset(black, white string) Options {
+	return func(o *OptionsParams) error {
+		o.asciiBlack = black
+		o.asciiWhite = white
+		return nil
+	}
+}
+func OptASCIIQuietZone(enabled bool) Options {
+	return func(o *OptionsParams) error {
+		o.asciiQuietSet = true
+		o.asciiQuiet = enabled
+		return nil
+	}
+}
 
 // Getters
 func (o *OptionsParams) GetTxId() string           { return o.txId }
@@ -75,3 +100,8 @@ func (o *OptionsParams) GetAdditionalInfo() string { return o.additional }
 func (o *OptionsParams) GetUrl() string            { return o.url }
 func (o *OptionsParams) GetQRCodeSize() int        { return o.qrcodeSize }
 func (o *OptionsParams) GetQRCodeContent() string  { return o.qrcodeContent }
+func (o *OptionsParams) GetASCIIQrScale() int      { return o.qrcodeScale }
+func (o *OptionsParams) GetASCIIQrBlack() string   { return o.asciiBlack }
+func (o *OptionsParams) GetASCIIQrWhite() string   { return o.asciiWhite }
+func (o *OptionsParams) GetASCIIQuietZone() bool   { return o.asciiQuiet }
+func (o *OptionsParams) HasASCIIQuietZone() bool   { return o.asciiQuietSet }

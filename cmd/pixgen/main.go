@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func newGenerateCmd() *cobra.Command {
 				return err
 			}
 
-			payload, qr, parsed, err := buildPix(params)
+			payload, qr, asciiQR, parsed, err := buildPix(params)
 			if err != nil {
 				return err
 			}
@@ -60,6 +61,10 @@ func newGenerateCmd() *cobra.Command {
 				fmt.Printf("TxID: %s\n", parsed.AdditionalDataField.TxID)
 			}
 			fmt.Printf("QR Code (base64): %s\n", base64.StdEncoding.EncodeToString(qr))
+			if asciiQR != "" {
+				fmt.Println("QR Code (ASCII):")
+				fmt.Println(asciiQR)
+			}
 
 			return nil
 		},
@@ -75,6 +80,11 @@ func newGenerateCmd() *cobra.Command {
 	flags.String("description", "", "Transaction description (optional)")
 	flags.String("additional-info", "", "Additional info (static only)")
 	flags.String("txid", "", "Transaction identifier (optional)")
+	flags.Int("qr-size", 0, "PNG QR code size in pixels (default 256 when omitted)")
+	flags.Int("ascii-scale", 1, "Scale factor (>=1) for ASCII QR output")
+	flags.Bool("ascii-quiet", false, "Include quiet zone border in ASCII QR output")
+	flags.String("ascii-black", "", "Character(s) used for dark modules in ASCII QR output")
+	flags.String("ascii-white", "", "Character(s) used for light modules in ASCII QR output")
 
 	return cmd
 }
@@ -151,7 +161,7 @@ func pixHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload, qr, parsed, err := buildPix(params)
+	payload, qr, _, parsed, err := buildPix(params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -182,11 +192,21 @@ type pixParams struct {
 	Description    string
 	AdditionalInfo string
 	TxID           string
+	QRCodeSize     int
+	ASCII          asciiParams
+}
+
+type asciiParams struct {
+	Scale     int
+	Quiet     bool
+	QuietSet  bool
+	BlackChar string
+	WhiteChar string
 }
 
 func collectPixParams(cmd *cobra.Command) (pixParams, error) {
 	flags := cmd.Flags()
-	return parseParams(
+	params, err := parseParams(
 		flags.Lookup("kind").Value.String(),
 		flags.Lookup("key").Value.String(),
 		flags.Lookup("url").Value.String(),
@@ -197,6 +217,50 @@ func collectPixParams(cmd *cobra.Command) (pixParams, error) {
 		flags.Lookup("additional-info").Value.String(),
 		flags.Lookup("txid").Value.String(),
 	)
+	if err != nil {
+		return pixParams{}, err
+	}
+
+	if fl := flags.Lookup("qr-size"); fl != nil && fl.Value.String() != fl.DefValue {
+		size, err := strconv.Atoi(fl.Value.String())
+		if err != nil {
+			return pixParams{}, fmt.Errorf("invalid qr-size: %w", err)
+		}
+		if size <= 0 {
+			return pixParams{}, fmt.Errorf("qr-size must be greater than zero")
+		}
+		params.QRCodeSize = size
+	}
+
+	if fl := flags.Lookup("ascii-scale"); fl != nil && fl.Value.String() != fl.DefValue {
+		scale, err := strconv.Atoi(fl.Value.String())
+		if err != nil {
+			return pixParams{}, fmt.Errorf("invalid ascii-scale: %w", err)
+		}
+		if scale < 1 {
+			return pixParams{}, fmt.Errorf("ascii-scale must be at least 1")
+		}
+		params.ASCII.Scale = scale
+	}
+
+	if fl := flags.Lookup("ascii-quiet"); fl != nil && fl.Value.String() != fl.DefValue {
+		quiet, err := strconv.ParseBool(fl.Value.String())
+		if err != nil {
+			return pixParams{}, fmt.Errorf("invalid ascii-quiet: %w", err)
+		}
+		params.ASCII.Quiet = quiet
+		params.ASCII.QuietSet = true
+	}
+
+	if fl := flags.Lookup("ascii-black"); fl != nil && fl.Value.String() != fl.DefValue {
+		params.ASCII.BlackChar = fl.Value.String()
+	}
+
+	if fl := flags.Lookup("ascii-white"); fl != nil && fl.Value.String() != fl.DefValue {
+		params.ASCII.WhiteChar = fl.Value.String()
+	}
+
+	return params, nil
 }
 
 func requestToParams(req pixRequest) (pixParams, error) {
@@ -259,7 +323,7 @@ func parseKind(kind string) (pix.PixKind, error) {
 	}
 }
 
-func buildPix(params pixParams) (string, []byte, *pix.ParsedPayload, error) {
+func buildPix(params pixParams) (string, []byte, string, *pix.ParsedPayload, error) {
 	opts := []pix.Options{
 		pix.OptKind(params.Kind),
 		pix.OptMerchantName(params.MerchantName),
@@ -284,22 +348,42 @@ func buildPix(params pixParams) (string, []byte, *pix.ParsedPayload, error) {
 	if params.URL != "" {
 		opts = append(opts, pix.OptUrl(params.URL))
 	}
+	if params.QRCodeSize > 0 {
+		opts = append(opts, pix.OptQRCodeSize(params.QRCodeSize))
+	}
+	if params.ASCII.Scale > 0 {
+		opts = append(opts, pix.OptQRCodeScale(params.ASCII.Scale))
+	}
+	if params.ASCII.BlackChar != "" || params.ASCII.WhiteChar != "" {
+		opts = append(opts, pix.OptASCIICharset(params.ASCII.BlackChar, params.ASCII.WhiteChar))
+	}
+	if params.ASCII.QuietSet {
+		opts = append(opts, pix.OptASCIIQuietZone(params.ASCII.Quiet))
+	}
 
 	p, err := pix.New(opts...)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, "", nil, err
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		return "", nil, "", nil, err
+	}
 	qr, err := p.GenQRCode()
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, "", nil, err
+	}
+
+	asciiQR, err := p.GenQRCodeASCII()
+	if err != nil {
+		return "", nil, "", nil, err
 	}
 
 	parsed, err := pix.ParsePayload(payload)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, "", nil, err
 	}
 
-	return payload, qr, parsed, nil
+	return payload, qr, asciiQR, parsed, nil
 }

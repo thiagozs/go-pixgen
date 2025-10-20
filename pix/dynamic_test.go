@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -17,6 +18,7 @@ func TestFetchDynamicPayloadJSON(t *testing.T) {
 		OptUrl("https://example.com/pix/123"),
 		OptMerchantName("Fulano de Tal"),
 		OptMerchantCity("CURITIBA"),
+		OptTxId(strings.Repeat("A", 25)),
 	}
 
 	p, err := New(opts...)
@@ -24,7 +26,10 @@ func TestFetchDynamicPayloadJSON(t *testing.T) {
 		t.Fatalf("unexpected error creating dynamic pix: %v", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 
 	respBody, _ := json.Marshal(map[string]string{
 		"pixCopyPaste": payload,
@@ -52,6 +57,16 @@ func TestFetchDynamicPayloadJSON(t *testing.T) {
 	if result.Parsed == nil || result.Parsed.Raw != payload {
 		t.Fatalf("expected parsed payload")
 	}
+	expectedURL := stripURLScheme("https://example.com/pix/123")
+	if len(result.Parsed.MerchantAccounts) == 0 || result.Parsed.MerchantAccounts[0].URL != expectedURL {
+		t.Fatalf("expected merchant account url %q, got %+v", expectedURL, result.Parsed.MerchantAccounts)
+	}
+	if result.Parsed.MerchantAccounts[0].PixKey != "" {
+		t.Fatalf("expected empty pix key for dynamic payload")
+	}
+	if result.Parsed.AdditionalDataField.TxID != "***" {
+		t.Fatalf("expected txid placeholder '***', got %s", result.Parsed.AdditionalDataField.TxID)
+	}
 	if result.Parsed.Kind() != DYNAMIC {
 		t.Fatalf("expected dynamic kind")
 	}
@@ -69,6 +84,7 @@ func TestFetchDynamicPayloadPlainText(t *testing.T) {
 		OptUrl("https://example.com/pix/321"),
 		OptMerchantName("Fulano de Tal"),
 		OptMerchantCity("CURITIBA"),
+		OptTxId(strings.Repeat("B", 25)),
 	}
 
 	p, err := New(opts...)
@@ -76,7 +92,10 @@ func TestFetchDynamicPayloadPlainText(t *testing.T) {
 		t.Fatalf("unexpected error creating dynamic pix: %v", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 
 	client := newMockHTTPClient(func(req *http.Request) (*http.Response, error) {
 		return &http.Response{
@@ -93,6 +112,10 @@ func TestFetchDynamicPayloadPlainText(t *testing.T) {
 	if result.Parsed == nil || result.Parsed.Raw != payload {
 		t.Fatalf("unexpected parsed payload")
 	}
+	expectedURL := stripURLScheme("https://example.com/pix/321")
+	if len(result.Parsed.MerchantAccounts) == 0 || result.Parsed.MerchantAccounts[0].URL != expectedURL {
+		t.Fatalf("expected merchant account url %q, got %+v", expectedURL, result.Parsed.MerchantAccounts)
+	}
 }
 
 func TestFetchDynamicPayloadExpired(t *testing.T) {
@@ -101,6 +124,7 @@ func TestFetchDynamicPayloadExpired(t *testing.T) {
 		OptUrl("https://example.com/pix/expired"),
 		OptMerchantName("Fulano de Tal"),
 		OptMerchantCity("CURITIBA"),
+		OptTxId(strings.Repeat("C", 25)),
 	}
 
 	p, err := New(opts...)
@@ -108,7 +132,10 @@ func TestFetchDynamicPayloadExpired(t *testing.T) {
 		t.Fatalf("unexpected error creating dynamic pix: %v", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 
 	respBody, _ := json.Marshal(map[string]string{
 		"pix":       payload,

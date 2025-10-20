@@ -2,6 +2,10 @@
 
 <p align="center"><img alt="pix-utils" src="https://raw.githubusercontent.com/thiagozs/go-pixgen/main/assets/logo-pix.png" width="128px" /></p>
 
+***release: Ultima versão do manual v2.9.0***
+
+---
+
 Gere e valide pagamentos do Sistema de Pagamentos Instantâneo (Pix) do Banco Central de forma simples. Além da biblioteca, este repositório inclui um CLI e um serviço REST para gerar payloads Pix estáticos ou dinâmicos, bem como seus códigos QR.
 
 ## Funcionalidades
@@ -24,7 +28,7 @@ Requer Go 1.17 ou superior.
 
 ## Guia rápido
 
-### CLI – gerar payload no terminal
+### CLI - gerar payload no terminal
 
 ```bash
 make cli
@@ -36,10 +40,13 @@ bin/pixgen generate \
   --merchant-city ARARANGUA \
   --amount 10.00 \
   --description "Pedido 123" \
-  --txid PEDIDO-123
+  --txid PEDIDO-123 \
+  --ascii-scale 1
 ```
 
-A saída inclui o código copia-e-cola, campos relevantes e o QR Code em base64.
+A saída inclui o código copia-e-cola, campos relevantes, o QR Code em base64 e a versão em ASCII. Use `--ascii-scale` (>=1), `--ascii-quiet=true` para recolocar a borda de silêncio e `--ascii-black/--ascii-white` para personalizar o render em terminal.
+
+Para QR Codes dinâmicos, lembre-se de informar `--url https://...` e um `--txid` alfanumérico (até 25 caracteres); o payload emitido trará a URL (tag `25`) e `***` no campo TxID conforme o manual.
 
 ### Serviço REST
 
@@ -106,7 +113,11 @@ if err != nil {
 	return
 }
 
-cpy := p.GenPayload()
+cpy, err := p.GenPayload()
+if err != nil {
+	fmt.Println(err.Error())
+	return
+}
 fmt.Printf("Copy and Paste: %s\n", cpy)
 
 qrPNG, err := p.GenQRCode()
@@ -116,6 +127,13 @@ if err != nil {
 }
 
 fmt.Printf("QRCode bytes: %d\n", len(qrPNG))
+
+asciiQR, err := p.GenQRCodeASCII()
+if err != nil {
+	fmt.Println(err.Error())
+	return
+}
+fmt.Println(asciiQR)
 
 parsed, err := pix.ParsePayload(cpy)
 if err != nil {
@@ -156,23 +174,25 @@ fmt.Printf("Remote Pix expires at: %v\n", payload.ExpiresAt)
 
 ## Destaques da API
 
-- `pix.New(opts...) (*pix.Pix, error)` – cria um gerador Pix configurável.
-- `(*Pix).GenPayload()` – retorna o payload EMV e o mantém em cache para `GenQRCode()`.
-- `pix.ParsePayload(string) (*ParsedPayload, error)` – faz o parsing do payload e valida o CRC.
-- `(*Pix).FetchDynamicPayload(ctx, client)` – baixa, valida e parseia payloads dinâmicos remotos.
-- `(*Pix).Validates()` – valida os parâmetros (chaves, tamanho de campos, etc.).
+- `pix.New(opts...) (*pix.Pix, error)` - cria um gerador Pix configurável.
+- `(*Pix).GenPayload() (string, error)` - retorna o payload EMV e o mantém em cache para `GenQRCode()`.
+- `pix.ParsePayload(string) (*ParsedPayload, error)` - faz o parsing do payload e valida o CRC.
+- `(*Pix).FetchDynamicPayload(ctx, client)` - baixa, valida e parseia payloads dinâmicos remotos.
+- `(*Pix).Validates()` - valida os parâmetros (chaves, tamanho de campos, etc.).
+- `(*Pix).GenQRCodeASCII() (string, error)` - renderiza o QR Code em ASCII para uso direto no terminal.
+- `pix.OptQRCodeScale`, `pix.OptASCIIQuietZone`, `pix.OptASCIICharset` - controlam escala, borda e caracteres usados no QR ASCII.
 
 ### Formatos aceitos de chave Pix
 
-- EVP (UUID) – normalizado para minúsculo.
-- Telefone (`+55DDDNÚMERO`) – aceita apenas dígitos com ou sem `+55`.
-- CPF/CNPJ – somente dígitos, com validação dos dígitos verificadores.
-- E-mail – validado via `net/mail`.
+- EVP (UUID) - normalizado para minúsculo.
+- Telefone (`+55DDDNÚMERO`) - aceita apenas dígitos com ou sem `+55`.
+- CPF/CNPJ - somente dígitos, com validação dos dígitos verificadores.
+- E-mail - validado via `net/mail`.
 
 ### Valor e TxID
 
 - Valor suporta até 13 dígitos antes da vírgula e 2 casas decimais (`9999999999999.99` limite).
-- TxID permite letras, números, `.` e `-` até 35 caracteres e é armazenado em maiúsculas.
+- TxID (estático ou dinâmico) deve ser alfanumérico (A-Z, 0-9) e ter no máximo 25 caracteres. No caso estático, deixe em branco para que o payload utilize `***`; no dinâmico, o QR Code continua transportando `***` enquanto a URL carrega os dados da cobrança.
 
 ### Busca de payload dinâmico
 

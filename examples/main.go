@@ -42,7 +42,10 @@ func runStaticExample() error {
 		return fmt.Errorf("create pix: %w", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		return fmt.Errorf("generate payload: %w", err)
+	}
 	fmt.Printf("Copy & Paste payload: %s\n", payload)
 
 	qrBytes, err := p.GenQRCode()
@@ -73,6 +76,7 @@ func runDynamicExample() error {
 		pix.OptUrl(server.URL),
 		pix.OptMerchantName("Fulano de Tal"),
 		pix.OptMerchantCity("CURITIBA"),
+		pix.OptTxId("DYNAMICPIXTXIDEXAMPLE01"),
 	}
 
 	p, err := pix.New(opts...)
@@ -108,7 +112,7 @@ func newMockDynamicServer() *httptest.Server {
 			pix.OptMerchantName("Fulano de Tal"),
 			pix.OptMerchantCity("CURITIBA"),
 			pix.OptAmount("50.00"),
-			pix.OptTxId("ABC123"),
+			pix.OptTxId("SERVERPAYLOADTXIDEX1"),
 		}
 
 		payloadPix, err := pix.New(opts...)
@@ -117,7 +121,11 @@ func newMockDynamicServer() *httptest.Server {
 			return
 		}
 
-		payload := payloadPix.GenPayload()
+		payload, err := payloadPix.GenPayload()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("generate payload: %v", err), http.StatusInternalServerError)
+			return
+		}
 		resp := map[string]string{
 			"pixCopyPaste": payload,
 			"expiresAt":    time.Now().Add(5 * time.Minute).Format(time.RFC3339),

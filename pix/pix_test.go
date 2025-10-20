@@ -23,7 +23,10 @@ func TestBacenConformance(t *testing.T) {
 		t.Fatalf("validation failed: %v", err)
 	}
 
-	payload := pix.GenPayload()
+	payload, err := pix.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 
 	if !strings.HasPrefix(payload, "000201010211") {
 		t.Errorf("invalid start: %s", payload[:20])
@@ -73,8 +76,11 @@ func TestDescriptionFallbackInMAI(t *testing.T) {
 		t.Fatalf("expected no additional info, got %q", add)
 	}
 
-	mai := p.generateMAI()
-	if !strings.Contains(mai, "Produto ABC") {
+	mai, err := p.generateMAI()
+	if err != nil {
+		t.Fatalf("generate MAI: %v", err)
+	}
+	if !strings.Contains(mai, normalizeChars("Produto ABC")) {
 		t.Fatalf("MAI should contain description fallback, got %s", mai)
 	}
 }
@@ -93,43 +99,86 @@ func TestNewValidationErrors(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		opts []Options
+		name               string
+		opts               []Options
+		expectNewError     bool
+		expectPayloadError bool
 	}{
 		{
-			name: "invalid pix key",
-			opts: build(OptPixKey("invalid-key")),
+			name:           "invalid pix key",
+			opts:           build(OptPixKey("invalid-key")),
+			expectNewError: true,
 		},
 		{
-			name: "empty merchant name",
-			opts: build(OptMerchantName("")),
+			name:           "empty merchant name",
+			opts:           build(OptMerchantName("")),
+			expectNewError: true,
 		},
 		{
-			name: "merchant city too long",
-			opts: build(OptMerchantCity("CIDADEMAIORQUE15")),
+			name:           "merchant city too long",
+			opts:           build(OptMerchantCity("CIDADEMAIORQUE15")),
+			expectNewError: true,
 		},
 		{
-			name: "dynamic without url",
-			opts: build(OptKind(DYNAMIC)),
+			name:           "dynamic without url",
+			opts:           build(OptKind(DYNAMIC), OptTxId(strings.Repeat("A", 25))),
+			expectNewError: true,
 		},
 		{
-			name: "dynamic without https",
-			opts: build(OptKind(DYNAMIC), OptUrl("http://example.com")),
+			name:           "dynamic without https",
+			opts:           build(OptKind(DYNAMIC), OptUrl("http://example.com"), OptTxId(strings.Repeat("A", 25))),
+			expectNewError: true,
 		},
 		{
-			name: "invalid amount",
-			opts: build(OptAmount("12.345")),
+			name:           "invalid amount",
+			opts:           build(OptAmount("12.345")),
+			expectNewError: true,
 		},
 		{
-			name: "invalid txid",
-			opts: build(OptTxId("INVALID TXID")),
+			name:           "invalid txid characters",
+			opts:           build(OptTxId("INVALID TXID")),
+			expectNewError: true,
+		},
+		{
+			name:           "txid too long",
+			opts:           build(OptTxId(strings.Repeat("A", 26))),
+			expectNewError: true,
+		},
+		{
+			name:           "dynamic without txid",
+			opts:           build(OptKind(DYNAMIC), OptUrl("https://example.com/cobranca")),
+			expectNewError: true,
+		},
+		{
+			name:           "dynamic txid invalid length",
+			opts:           build(OptKind(DYNAMIC), OptUrl("https://example.com/cobranca"), OptTxId(strings.Repeat("A", 26))),
+			expectNewError: true,
+		},
+		{
+			name:               "dynamic url exceeds limit",
+			opts:               build(OptKind(DYNAMIC), OptUrl("https://example.com/"+strings.Repeat("a", 80)), OptTxId(strings.Repeat("A", 25))),
+			expectPayloadError: true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := New(tc.opts...); err == nil {
-				t.Fatalf("expected validation error for %s", tc.name)
+			p, err := New(tc.opts...)
+			if tc.expectNewError {
+				if err == nil {
+					t.Fatalf("expected validation error for %s", tc.name)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error creating pix: %v", err)
+			}
+
+			if tc.expectPayloadError {
+				if _, err := p.GenPayload(); err == nil {
+					t.Fatalf("expected payload generation error for %s", tc.name)
+				}
+				return
 			}
 		})
 	}
@@ -141,6 +190,7 @@ func TestDynamicPixValidation(t *testing.T) {
 		OptMerchantCity("ARACAJU"),
 		OptKind(DYNAMIC),
 		OptUrl("https://example.com/invoice"),
+		OptTxId(strings.Repeat("A", 25)),
 	}
 
 	if _, err := New(opts...); err != nil {
@@ -154,6 +204,7 @@ func TestDynamicPixWithoutPixKey(t *testing.T) {
 		OptMerchantCity("ARACAJU"),
 		OptKind(DYNAMIC),
 		OptUrl("https://example.com/invoice"),
+		OptTxId(strings.Repeat("B", 25)),
 	}
 
 	p, err := New(opts...)
@@ -163,5 +214,32 @@ func TestDynamicPixWithoutPixKey(t *testing.T) {
 
 	if key := p.params.GetPixKey(); key != "" {
 		t.Fatalf("expected empty pix key, got %s", key)
+	}
+}
+
+func TestGenQRCodeASCII(t *testing.T) {
+	opts := []Options{
+		OptPixKey("11999887766"),
+		OptMerchantName("FULANO DE TAL"),
+		OptMerchantCity("SAO PAULO"),
+		OptAmount("10.00"),
+		OptTxId("TESTE123"),
+	}
+
+	p, err := New(opts...)
+	if err != nil {
+		t.Fatalf("unexpected error creating pix: %v", err)
+	}
+
+	ascii, err := p.GenQRCodeASCII()
+	if err != nil {
+		t.Fatalf("generate ascii qrcode: %v", err)
+	}
+
+	if len(strings.TrimSpace(ascii)) == 0 {
+		t.Fatalf("ascii qrcode should not be empty")
+	}
+	if !strings.Contains(ascii, "\n") {
+		t.Fatalf("expected multiline ascii qrcode, got %q", ascii)
 	}
 }

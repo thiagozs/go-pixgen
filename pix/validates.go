@@ -13,8 +13,8 @@ import (
 
 var (
 	uuidPattern   = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	txidPattern   = regexp.MustCompile(`^[A-Za-z0-9\.\-]{1,35}$`)
-	amountPattern = regexp.MustCompile(`^\d{1,13}(\.\d{1,2})?$`)
+	txidPattern   = regexp.MustCompile(`^[A-Za-z0-9]{1,25}$`)
+	amountPattern = regexp.MustCompile(`^\d{1,10}\.\d{2}$`)
 )
 
 // Validates ensures the payload meets BACEN Pix requirements
@@ -65,8 +65,8 @@ func (p *Pix) Validates() error {
 	}
 
 	if add := strings.TrimSpace(p.params.additional); add != "" {
-		if utf8.RuneCountInString(add) > 50 {
-			return errors.New("additional info must be at most 50 characters")
+		if utf8.RuneCountInString(add) > 72 {
+			return errors.New("additional info must be at most 72 characters")
 		}
 		p.params.additional = add
 	}
@@ -100,9 +100,21 @@ func (p *Pix) Validates() error {
 		p.params.url = rawURL
 	}
 
-	if txid := strings.TrimSpace(p.params.txId); txid != "" {
+	txid := strings.TrimSpace(p.params.txId)
+	switch p.params.kind {
+	case STATIC:
+		if txid != "" {
+			if !txidPattern.MatchString(txid) {
+				return fmt.Errorf("txid must be alphanumeric up to 25 characters")
+			}
+			p.params.txId = strings.ToUpper(txid)
+		}
+	case DYNAMIC:
+		if txid == "" {
+			return errors.New("dynamic Pix requires txid")
+		}
 		if !txidPattern.MatchString(txid) {
-			return errors.New("txid must be 1-35 characters using A-Z, a-z, 0-9, '-' or '.'")
+			return fmt.Errorf("dynamic txid must be alphanumeric up to 25 characters")
 		}
 		p.params.txId = strings.ToUpper(txid)
 	}

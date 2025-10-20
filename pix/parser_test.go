@@ -22,7 +22,10 @@ func TestParsePayloadStatic(t *testing.T) {
 		t.Fatalf("unexpected error creating pix: %v", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 
 	parsed, err := ParsePayload(payload)
 	if err != nil {
@@ -66,7 +69,10 @@ func TestParsePayloadInvalidCRC(t *testing.T) {
 		t.Fatalf("unexpected error creating pix: %v", err)
 	}
 
-	payload := p.GenPayload()
+	payload, err := p.GenPayload()
+	if err != nil {
+		t.Fatalf("generate payload: %v", err)
+	}
 	tampered := payload[:len(payload)-1] + "0"
 
 	if _, err := ParsePayload(tampered); err == nil || !strings.Contains(err.Error(), "crc mismatch") {
